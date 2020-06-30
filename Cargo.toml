@@ -1,5 +1,5 @@
 [package]
-name = "ssl-expiration"
+name = "ssl-expiration2"
 version = "0.2.0"
 description = "Checks SSL certificate expiration"
 authors = ["Onur Aslan <onur@onur.im>", "Daniel Dettlaff <dmilith@me.com>"]
@@ -15,6 +15,6 @@ openssl = "0.10.30"
 openssl-sys = "0.9.58"
 
 [[bin]]
-name = "ssl-expiration"
+name = "ssl-expiration2"
 test = false
 doc = false

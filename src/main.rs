@@ -2,10 +2,13 @@ use std::env;
 use std::io::{stderr, Write};
 use std::process::exit;
 
+use ssl_expiration2::SslExpiration;
+
+
 fn main() {
     let mut exit_code = 0;
     for domain in env::args().skip(1) {
-        match ssl_expiration::SslExpiration::from_domain_name(&domain) {
+        match SslExpiration::from_domain_name(&domain) {
             Ok(expiration) => {
                 let days = expiration.days();
                 if expiration.is_expired() {
