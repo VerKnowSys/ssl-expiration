@@ -2,16 +2,29 @@
 //!
 //! This crate will try to connect a remote server and check SSL certificate expiration.
 //!
-//! Example:
+//! Basic usage example:
 //!
 //! ```rust
-//! use ssl_expiration::SslExpiration;
+//! use ssl_expiration2::SslExpiration;
 //!
 //! let expiration = SslExpiration::from_domain_name("google.com").unwrap();
 //! if expiration.is_expired() {
 //!     // do something if SSL certificate expired
 //! }
 //! ```
+//!
+//! Check days before expiration example:
+//!
+//! ```rust
+//! use ssl_expiration2::SslExpiration;
+//!
+//! let expiration =
+//!     SslExpiration::from_domain_name("google.com").expect("Domain validation has to work");
+//! if expiration.days() < 14 {
+//!     // SSL certificate will expire in less than 2 weeks, run notification…
+//! }
+//! ```
+
 
 #[macro_use]
 extern crate error_chain;
@@ -129,6 +142,14 @@ mod tests {
             .unwrap()
             .days();
         assert!(days > 14)
+    }
+
+
+    #[test]
+    fn test_non_panicing_chain() {
+        SslExpiration::from_domain_name("google.com")
+            .and_then(|validity| Ok(assert!(validity.days() > 14)))
+            .unwrap_or_else(|_| assert!(false));
     }
 
 
