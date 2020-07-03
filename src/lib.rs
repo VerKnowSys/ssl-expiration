@@ -119,7 +119,6 @@ pub mod error {
         }
         errors {
             HandshakeError(e: String) {
-                description("HandshakeError")
                 display("HandshakeError: {}", e)
             }
         }
