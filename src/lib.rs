@@ -54,11 +54,19 @@ impl SslExpiration {
     ///
     /// This function will use HTTPS port (443) to check SSL certificate.
     pub fn from_domain_name(domain: &str) -> Result<SslExpiration> {
-        SslExpiration::from_addr(format!("{}:443", domain), domain)
+        SslExpiration::from_addr(format!("{}:443", domain), domain, 30) // seconds
+    }
+
+    pub fn from_domain_name_with_timeout(domain: &str, timeout: u64) -> Result<SslExpiration> {
+        SslExpiration::from_addr(format!("{}:443", domain), domain, timeout)
     }
 
     /// Creates new SslExpiration from SocketAddr.
-    pub fn from_addr<A: ToSocketAddrs>(addr: A, domain: &str) -> Result<SslExpiration> {
+    pub fn from_addr<A: ToSocketAddrs>(
+        addr: A,
+        domain: &str,
+        timeout: u64,
+    ) -> Result<SslExpiration> {
         let context = {
             let mut context = SslContext::builder(SslMethod::tls())?;
             context.set_verify(SslVerifyMode::empty());
@@ -67,6 +75,9 @@ impl SslExpiration {
         let mut connector = Ssl::new(&context)?;
         connector.set_hostname(domain)?;
         let stream = TcpStream::connect(addr)?;
+        stream.set_write_timeout(Some(std::time::Duration::from_secs(timeout)))?;
+        stream.set_read_timeout(Some(std::time::Duration::from_secs(timeout)))?;
+
         let stream = connector
             .connect(stream)
             .map_err(|e| error::ErrorKind::HandshakeError(e.to_string()))?;
@@ -141,6 +152,22 @@ mod tests {
             .unwrap()
             .days();
         assert!(days > 14)
+    }
+
+
+    #[test]
+    fn test_too_small_timeout_chain() {
+        SslExpiration::from_domain_name_with_timeout("google.com", 0)
+            .and_then(|_| Ok(assert!(false)))
+            .unwrap_or_else(|_| assert!(true));
+    }
+
+
+    #[test]
+    fn test_sufficient_timeout_chain() {
+        SslExpiration::from_domain_name_with_timeout("google.com", 300)
+            .and_then(|_| Ok(assert!(true)))
+            .unwrap_or_else(|_| assert!(false));
     }
 
 
