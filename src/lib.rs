@@ -78,11 +78,11 @@ impl SslExpiration {
         let now = Asn1Time::days_from_now(0)?;
 
         let (mut pday, mut psec) = (0, 0);
+        let ptr_pday: *mut c_int = &mut pday;
+        let ptr_psec: *mut c_int = &mut psec;
+        let now_ptr = &now as *const _ as *const _;
+        let after_ptr = &cert.not_after() as *const _ as *const _;
         unsafe {
-            let ptr_pday: *mut c_int = &mut pday;
-            let ptr_psec: *mut c_int = &mut psec;
-            let now_ptr = &now as *const _ as *const _;
-            let after_ptr = &cert.not_after() as *const _ as *const _;
             ASN1_TIME_diff(ptr_pday, ptr_psec, *now_ptr, *after_ptr);
         }
 
