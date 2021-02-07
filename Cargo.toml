@@ -1,6 +1,6 @@
 [package]
 name = "ssl-expiration2"
-version = "0.2.3"
+version = "0.3.0"
 description = "Checks SSL certificate expiration"
 authors = ["Onur Aslan <onur@onur.im>", "Daniel Dettlaff <dmilith@me.com>"]
 license = "MIT"
