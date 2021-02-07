@@ -74,30 +74,44 @@ impl SslExpiration {
         };
         let mut connector = Ssl::new(&context)?;
         connector.set_hostname(domain)?;
-        let stream = TcpStream::connect(addr)?;
-        stream.set_write_timeout(Some(std::time::Duration::from_secs(timeout)))?;
-        stream.set_read_timeout(Some(std::time::Duration::from_secs(timeout)))?;
+        match addr.to_socket_addrs()?.next() {
+            Some(first_address) => {
+                let stream =
+                    TcpStream::connect_timeout(&first_address, Duration::from_secs(timeout))?;
+                stream.set_write_timeout(Some(Duration::from_secs(timeout)))?;
+                stream.set_read_timeout(Some(Duration::from_secs(timeout)))?;
 
-        let stream = connector
-            .connect(stream)
-            .map_err(|e| error::ErrorKind::HandshakeError(e.to_string()))?;
-        let cert = stream
-            .ssl()
-            .peer_certificate()
-            .ok_or("Certificate not found")?;
+                let stream = connector
+                    .connect(stream)
+                    .map_err(|e| ErrorKind::HandshakeError(e.to_string()))?;
+                let cert = stream
+                    .ssl()
+                    .peer_certificate()
+                    .ok_or("Certificate not found")?;
 
-        let now = Asn1Time::days_from_now(0)?;
+                let now = Asn1Time::days_from_now(0)?;
 
-        let (mut pday, mut psec) = (0, 0);
-        let ptr_pday: *mut c_int = &mut pday;
-        let ptr_psec: *mut c_int = &mut psec;
-        let now_ptr = &now as *const _ as *const _;
-        let after_ptr = &cert.not_after() as *const _ as *const _;
-        unsafe {
-            ASN1_TIME_diff(ptr_pday, ptr_psec, *now_ptr, *after_ptr);
+                let (mut pday, mut psec) = (0, 0);
+                let ptr_pday: *mut c_int = &mut pday;
+                let ptr_psec: *mut c_int = &mut psec;
+                let now_ptr = &now as *const _ as *const _;
+                let after_ptr = &cert.not_after() as *const _ as *const _;
+                unsafe {
+                    ASN1_TIME_diff(ptr_pday, ptr_psec, *now_ptr, *after_ptr);
+                }
+
+                Ok(SslExpiration(pday * 24 * 60 * 60 + psec))
+            }
+            None => {
+                Err(Error(
+                    ErrorKind::HandshakeError(format!(
+                        "Couldn't resolve any address from domain: {}",
+                        &domain
+                    )),
+                    State::default(),
+                ))
+            }
         }
-
-        Ok(SslExpiration(pday * 24 * 60 * 60 + psec))
     }
 
     /// How many seconds until SSL certificate expires.
