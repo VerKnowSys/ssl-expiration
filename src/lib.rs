@@ -69,6 +69,7 @@ impl SslExpiration {
     }
 
     /// Creates new SslExpiration from SocketAddr.
+    #[link(name = "ssl")]
     pub fn from_addr<A: ToSocketAddrs>(
         addr: A,
         domain: &str,

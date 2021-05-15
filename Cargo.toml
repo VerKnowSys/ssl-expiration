@@ -11,8 +11,8 @@ edition = "2018"
 
 [dependencies]
 error-chain = "0.12.4"
-openssl = "0.10.32"
-openssl-sys = "0.9.60"
+openssl = "0.10.34"
+openssl-sys = "0.9.63"
 
 [[bin]]
 name = "ssl-expiration2"
